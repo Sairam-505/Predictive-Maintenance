@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  inference-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+    volumes:
+      - ./models:/app/models
+      - ./config:/app/config
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - inference-api
+
+  dashboard:
+    build: .
+    command: ["streamlit", "run", "src/ui/dashboard.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://inference-api:8000
+    depends_on:
+      - inference-api

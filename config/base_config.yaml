@@ -1,0 +1,64 @@
+# Base Configuration for Predictive Maintenance System
+
+project:
+  name: "Universal Predictive Maintenance System"
+  version: "1.0.0"
+  description: "Multi-equipment RUL prediction"
+
+data:
+  raw_path: "./data/raw"
+  processed_path: "./data/processed"
+  external_path: "./data/external"
+  sample_rate_default: 25600  # Hz
+
+preprocessing:
+  normalization_method: "minmax"  # "minmax" or "zscore"
+  handle_missing: "forward_fill"  # "drop", "forward_fill", "interpolate"
+  outlier_method: "iqr"  # "iqr" or "isolation_forest"
+  outlier_threshold: 3  # Standard deviations for IQR
+
+feature_engineering:
+  time_domain:
+    - "mean"
+    - "std"
+    - "rms"
+    - "kurtosis"
+    - "skewness"
+    - "crest_factor"
+  frequency_domain:
+    - "fft"
+    - "power_spectral_density"
+    - "spectral_centroid"
+  time_frequency:
+    - "wavelet_transform"
+
+models:
+  random_forest:
+    n_estimators: 100
+    max_depth: 20
+    min_samples_split: 5
+  xgboost:
+    learning_rate: 0.1
+    max_depth: 7
+    n_estimators: 100
+  lstm:
+    units: 64
+    layers: 2
+    dropout: 0.2
+    batch_size: 32
+  isolation_forest:
+    contamination: 0.1
+    n_estimators: 100
+
+equipment_types:
+  - "bearing"
+  - "motor"
+  - "pump"
+  - "gearbox"  # Phase 2
+  - "turbine"  # Phase 2
+
+paths:
+  models: "./models/final"
+  checkpoints: "./models/checkpoints"
+  logs: "./logs"
+  results: "./results"

@@ -1,0 +1,37 @@
+# Data files (too large)
+data/raw/*
+data/processed/*
+*.csv
+*.mat
+*.pkl
+*.h5
+*.pth
+
+# Model files
+models/checkpoints/*
+models/final/*
+*.onnx
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Virtual environment
+venv/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+logs/
+*.log
+
+# Temporary
+tmp/
+.DS_Store
