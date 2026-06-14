@@ -64,7 +64,12 @@ th, td { padding: 13px 14px; border-bottom: 1px solid #1e293b; text-align: left;
 th { color: #94a3b8; font-size: 12px; text-transform: uppercase; }
 tr:last-child td { border-bottom: 0; }
 
-.detail-grid, .analyze-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .8fr); gap: 18px; }
+.detail-grid, .analyze-grid, .operations-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .8fr); gap: 18px; }
+.operations-grid { grid-template-columns: minmax(280px, .7fr) minmax(0, 1.3fr); align-items: start; }
+.compact-form { display: grid; gap: 12px; }
+.compact-form label { display: grid; gap: 6px; color: #94a3b8; font-size: 13px; }
+.compact-form input, .compact-form select { width: 100%; min-height: 40px; border: 1px solid #334155; background: #020617; color: #e2e8f0; border-radius: 6px; padding: 0 10px; }
+.sensor-input-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .metric-panel { min-height: 340px; }
 .gauge { width: 164px; height: 164px; border-radius: 999px; display: grid; place-items: center; margin: 18px auto; border: 12px solid #00D4FF; font: 800 38px "Space Grotesk"; }
 .prob-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
@@ -98,6 +103,9 @@ blockquote { margin: 0; padding: 14px; border-left: 3px solid #00D4FF; backgroun
 .modal-backdrop { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.72); z-index: 20; }
 .modal { width: min(420px, calc(100vw - 32px)); padding: 22px; border-radius: 8px; border: 1px solid #1e293b; background: #0f172a; }
 .modal div { display: flex; justify-content: flex-end; gap: 10px; }
+.status-modal { display: grid; gap: 12px; }
+.status-modal div { justify-content: space-between; }
+.status-rul { font: 800 42px "Space Grotesk"; color: #f8fafc; }
 
 @media (max-width: 860px) {
   .app-shell { display: block; }
@@ -108,7 +116,8 @@ blockquote { margin: 0; padding: 14px; border-left: 3px solid #00D4FF; backgroun
   .nav-link { margin: 0; min-width: max-content; }
   .nav-link span { display: none; }
   .page, .landing { padding: 18px; }
-  .hero-band, .detail-grid, .analyze-grid, .pipeline-row { grid-template-columns: 1fr; }
+  .hero-band, .detail-grid, .analyze-grid, .operations-grid, .pipeline-row { grid-template-columns: 1fr; }
+  .sensor-input-grid { grid-template-columns: 1fr 1fr; }
   .hero-band { min-height: auto; padding-top: 24px; }
 }
 

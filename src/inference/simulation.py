@@ -109,12 +109,12 @@ class PhysicsSimulationEngine:
         temperature_cols = [col for col in numeric_data.columns if "temp" in str(col).lower()]
         sensor_cols = [col for col in numeric_data.columns if str(col).lower().startswith("sensor_")]
 
-        pressure_std = float(numeric_data[pressure_cols].std().mean()) if pressure_cols else std
-        flow_loss = self._flow_loss(numeric_data[flow_cols]) if flow_cols else min(0.85, max(0.0, std / 20.0))
+        pressure_std = self._finite(float(numeric_data[pressure_cols].std().mean()), std) if pressure_cols else std
+        flow_loss = self._finite(self._flow_loss(numeric_data[flow_cols]), 0.0) if flow_cols else min(0.85, max(0.0, std / 20.0))
         spectral_energy = self._spectral_energy(values)
         anomaly_z = float(np.max(np.abs((values - np.mean(values)) / (np.std(values) + EPSILON))))
-        temperature_drift = self._temperature_drift(numeric_data[temperature_cols]) if temperature_cols else 0.0
-        turbine_deviation = self._turbine_deviation(numeric_data[sensor_cols]) if sensor_cols else 0.0
+        temperature_drift = self._finite(self._temperature_drift(numeric_data[temperature_cols]), 0.0) if temperature_cols else 0.0
+        turbine_deviation = self._finite(self._turbine_deviation(numeric_data[sensor_cols]), 0.0) if sensor_cols else 0.0
 
         return SensorStats(
             rms=rms,
@@ -179,7 +179,7 @@ class PhysicsSimulationEngine:
 
     def health_score(self, equipment_type: str, rul_hours: float) -> int:
         base = self.BASE_RUL.get(equipment_type, self.BASE_RUL["default"])
-        return int(np.clip((rul_hours / base) * 100, 0, 100))
+        return int(np.clip((self._finite(rul_hours, 1.0) / base) * 100, 0, 100))
 
     def maintenance_recommendation(self, alert_level: str, fault_type: str, rul_hours: float) -> str:
         if alert_level == "critical":
@@ -231,3 +231,6 @@ class PhysicsSimulationEngine:
         fourth_moment = np.mean(np.power(centered, 4))
         kurt = fourth_moment / (variance**2)
         return float(kurt) if np.isfinite(kurt) else 3.0
+
+    def _finite(self, value: float, fallback: float) -> float:
+        return float(value) if np.isfinite(value) else float(fallback)

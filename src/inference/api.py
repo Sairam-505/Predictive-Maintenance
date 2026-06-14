@@ -9,8 +9,10 @@ import pandas as pd
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
+from pydantic import BaseModel, Field
 
 from src.inference.simulation import PhysicsSimulationEngine
+from src.inference.store import EquipmentStore
 
 
 app = FastAPI(title="Predictive Maintenance API", version="2.0.0")
@@ -26,6 +28,7 @@ app.add_middleware(
 Instrumentator().instrument(app).expose(app)
 
 simulation_engine = PhysicsSimulationEngine()
+equipment_store = EquipmentStore(simulation_engine=simulation_engine)
 engine_mode = "simulation"
 alerts_store: list[dict[str, Any]] = []
 
@@ -39,6 +42,16 @@ FLEET_BLUEPRINT = [
     ("MTR-311", "Auxiliary Motor 311", "motor"),
     ("PMP-044", "Hydraulic Pump 44", "pump"),
 ]
+
+
+class EquipmentCreate(BaseModel):
+    name: str = Field(..., min_length=1)
+    equipment_type: str = Field(..., min_length=1)
+
+
+class SensorReadingCreate(BaseModel):
+    timestamp: str | None = None
+    sensors: dict[str, float]
 
 
 @app.on_event("startup")
@@ -81,18 +94,31 @@ async def predict(file: UploadFile = File(...)) -> dict[str, Any]:
 
 @app.get("/fleet")
 def fleet() -> list[dict[str, Any]]:
-    units = [build_fleet_unit(index, *item) for index, item in enumerate(FLEET_BLUEPRINT)]
+    units = [build_fleet_unit(index, equipment) for index, equipment in enumerate(equipment_store.list_equipment())]
     refresh_alerts(units)
     return units
 
 
+@app.post("/equipment")
+def create_equipment(payload: EquipmentCreate) -> dict[str, Any]:
+    equipment = equipment_store.create_equipment(payload.name, payload.equipment_type)
+    status = equipment_store.analyze_equipment(equipment)
+    return {"equipment": equipment, "status": status}
+
+
+@app.get("/equipment")
+def equipment_list() -> list[dict[str, Any]]:
+    return fleet()
+
+
 @app.get("/equipment/{equipment_id}")
 def equipment_detail(equipment_id: str) -> dict[str, Any]:
-    unit = next((build_fleet_unit(index, *item) for index, item in enumerate(FLEET_BLUEPRINT) if item[0] == equipment_id), None)
-    if unit is None:
+    equipment = equipment_store.get_equipment(equipment_id)
+    if equipment is None:
         raise HTTPException(status_code=404, detail="Equipment not found")
 
-    history = build_history(equipment_id, unit["rul_hours"])
+    unit = build_fleet_unit(0, equipment)
+    history = equipment_store.build_history(equipment) or build_history(equipment_id, unit["rul_hours"])
     return {
         **unit,
         "history": history,
@@ -108,6 +134,18 @@ def equipment_detail(equipment_id: str) -> dict[str, Any]:
             {"date": "2026-06-10", "event": "Automated health check recorded"},
         ],
     }
+
+
+@app.post("/equipment/{equipment_id}/readings")
+def add_sensor_reading(equipment_id: str, payload: SensorReadingCreate) -> dict[str, Any]:
+    try:
+        result = equipment_store.add_reading(equipment_id, payload.sensors, payload.timestamp)
+        refresh_alerts(fleet())
+        return result
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Equipment not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/alerts")
@@ -148,20 +186,26 @@ def report() -> list[dict[str, Any]]:
     return sorted(rows, key=lambda item: item["current_rul_hours"])
 
 
-def build_fleet_unit(index: int, equipment_id: str, name: str, equipment_type: str) -> dict[str, Any]:
-    now = datetime.now(timezone.utc)
-    synthetic_data = synthetic_sensor_frame(equipment_type, index)
-    result = simulation_engine.analyze(synthetic_data, equipment_id=equipment_id)
+def build_fleet_unit(index: int, equipment: dict[str, Any]) -> dict[str, Any]:
+    equipment_id = equipment["equipment_id"]
+    if equipment.get("readings"):
+        result = equipment_store.analyze_equipment(equipment)
+    elif equipment.get("is_demo", False):
+        synthetic_data = synthetic_sensor_frame(equipment["equipment_type"], index)
+        result = simulation_engine.analyze(synthetic_data, equipment_id=equipment_id)
+    else:
+        result = equipment_store.analyze_equipment(equipment)
     return {
         "equipment_id": equipment_id,
-        "name": name,
-        "equipment_type": equipment_type,
+        "name": equipment["name"],
+        "equipment_type": equipment["equipment_type"],
         "rul_hours": result["rul_hours"],
         "health_score": result["health_score"],
         "alert_level": result["alert_level"],
         "fault_type": result["fault_type"],
         "confidence_score": result["confidence_score"],
-        "last_updated": now.isoformat(),
+        "reading_count": result.get("reading_count", len(equipment.get("readings", []))),
+        "last_updated": result.get("last_updated", equipment["last_updated"]),
     }
 
 

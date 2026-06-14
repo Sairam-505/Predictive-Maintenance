@@ -36,6 +36,7 @@ logs/
 # Temporary
 tmp/
 .tmp/
+runtime_data/
 .DS_Store
 
 # Frontend

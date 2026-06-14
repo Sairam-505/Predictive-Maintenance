@@ -10,6 +10,7 @@ export interface FleetUnit {
   alert_level: AlertLevel;
   fault_type: string;
   confidence_score: number;
+  reading_count: number;
   last_updated: string;
 }
 
@@ -61,4 +62,31 @@ export interface PredictionResult {
   recommendation: string;
   ai_explanation: string;
   sensor_statistics: Record<string, number>;
+}
+
+export interface EquipmentCreatePayload {
+  name: string;
+  equipment_type: string;
+}
+
+export interface SensorReadingPayload {
+  sensors: Record<string, number>;
+}
+
+export interface ReadingStatusResponse {
+  equipment: {
+    equipment_id: string;
+    name: string;
+    equipment_type: string;
+    readings: Array<unknown>;
+  };
+  reading: {
+    timestamp: string;
+    sensors: Record<string, number>;
+  };
+  status: FleetUnit & {
+    recommendation: string;
+    status_message: string;
+    sensor_statistics: Record<string, number>;
+  };
 }

@@ -20,7 +20,7 @@ export default function RULCard({ unit }: { unit: FleetUnit }) {
       </div>
       <div className="card-footer">
         <span><Activity size={14} /> {unit.fault_type.replaceAll("_", " ")}</span>
-        <span><Wrench size={14} /> {unit.health_score}%</span>
+        <span><Wrench size={14} /> {unit.health_score}% · {unit.reading_count ?? 0} readings</span>
       </div>
     </Link>
   );

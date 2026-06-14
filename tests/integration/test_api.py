@@ -23,7 +23,7 @@ def test_fleet_returns_eight_monitored_units():
 
     assert response.status_code == 200
     payload = response.json()
-    assert len(payload) == 8
+    assert len(payload) >= 8
     assert {"equipment_id", "equipment_type", "rul_hours", "alert_level"} <= set(payload[0])
 
 
@@ -41,3 +41,29 @@ def test_csv_upload_returns_prediction_without_random_stub():
     assert 0 < payload["rul_hours"] <= 500
     assert 0.78 <= payload["confidence_score"] <= 0.95
     assert payload["ai_explanation"]
+
+
+def test_user_can_add_equipment_and_save_sensor_reading():
+    create_response = client.post(
+        "/equipment",
+        json={"name": "Test Pump Cell", "equipment_type": "pump"},
+    )
+
+    assert create_response.status_code == 200
+    equipment_id = create_response.json()["equipment"]["equipment_id"]
+
+    reading_response = client.post(
+        f"/equipment/{equipment_id}/readings",
+        json={"sensors": {"pressure": 85.0, "flow": 61.0, "temperature": 49.0}},
+    )
+
+    assert reading_response.status_code == 200
+    payload = reading_response.json()
+    assert payload["status"]["equipment_id"] == equipment_id
+    assert payload["status"]["reading_count"] == 1
+    assert 0 < payload["status"]["rul_hours"] <= 720
+    assert payload["status"]["status_message"]
+
+    detail_response = client.get(f"/equipment/{equipment_id}")
+    assert detail_response.status_code == 200
+    assert len(detail_response.json()["history"]) >= 1

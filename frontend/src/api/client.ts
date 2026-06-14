@@ -1,5 +1,14 @@
 import axios from "axios";
-import type { AlertItem, EquipmentDetail, FleetUnit, PredictionResult, ReportRow } from "../types";
+import type {
+  AlertItem,
+  EquipmentCreatePayload,
+  EquipmentDetail,
+  FleetUnit,
+  PredictionResult,
+  ReadingStatusResponse,
+  ReportRow,
+  SensorReadingPayload
+} from "../types";
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:8000",
@@ -23,6 +32,16 @@ export async function acknowledgeAlert(id: string) {
 
 export async function getEquipment(id: string) {
   const response = await api.get<EquipmentDetail>(`/equipment/${id}`);
+  return response.data;
+}
+
+export async function createEquipment(payload: EquipmentCreatePayload) {
+  const response = await api.post<{ equipment: unknown; status: FleetUnit }>("/equipment", payload);
+  return response.data;
+}
+
+export async function addSensorReading(equipmentId: string, payload: SensorReadingPayload) {
+  const response = await api.post<ReadingStatusResponse>(`/equipment/${equipmentId}/readings`, payload);
   return response.data;
 }
 

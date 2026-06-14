@@ -5,7 +5,8 @@ A full-stack predictive maintenance platform for detecting equipment health risk
 ## Architecture
 
 - **React Frontend**: Industrial dark dashboard with fleet health, alerts, CSV upload analysis, equipment details, and downloadable reports.
-- **FastAPI Backend**: Seven production-style endpoints for prediction, fleet, equipment detail, alerts, report, and health checks.
+- **FastAPI Backend**: Production-style endpoints for prediction, fleet, equipment detail, manual readings, alerts, reports, and health checks.
+- **User Equipment Tracking**: Users can add their own equipment, enter sensor readings manually, save reading history, and receive an immediate health-status popup.
 - **Physics Simulation Engine**: Realistic RUL estimates from sensor statistics while trained model files are not available yet.
 - **Inference Router**: Connects the equipment classifier to trained equipment-specific models when `.pkl` or `.h5` files are added.
 - **Data Adapters**: Loaders for CMAPSS, CWRU, IMS, hydraulic, Paderborn, XJTU, and FEMTO-style datasets.
@@ -51,7 +52,10 @@ A full-stack predictive maintenance platform for detecting equipment health risk
 
 - `POST /predict`: Upload a CSV and receive equipment type, RUL, confidence, fault type, explanation, and recommendation.
 - `GET /fleet`: Returns 8 monitored equipment units with RUL and alert level.
+- `POST /equipment`: Add a user equipment asset to the fleet.
+- `GET /equipment`: Returns all fleet equipment, including user-added equipment.
 - `GET /equipment/{id}`: Returns equipment detail plus 7-day hourly sensor history.
+- `POST /equipment/{id}/readings`: Save a manual sensor reading and receive current health/RUL status.
 - `GET /alerts`: Returns active alerts sorted by RUL.
 - `POST /alerts/{id}/acknowledge`: Marks an alert as acknowledged.
 - `GET /report`: Returns a fleet health and maintenance summary.
@@ -63,6 +67,8 @@ Run focused API tests:
 ```bash
 pytest tests/integration/test_api.py
 ```
+
+The tests cover CSV prediction, fleet retrieval, user equipment creation, manual sensor reading storage, and RUL/health status calculation from saved readings.
 
 Run the frontend production build:
 ```bash
